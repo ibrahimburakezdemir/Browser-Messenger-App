@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Kaanİbrahim---SocketiochatApp</title>
+    <style>
+        .avatar-wrapper {
+            box-sizing: border-box;
+            width: 20%;
+            height: 100%;
+            overflow: auto;
+            border: 1px solid black;
+        }
+
+        .image-wrapper {
+            width: 90%;
+            height: 20%;
+            margin: 3px auto;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .avatar-image {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-image: url('C:/Users/Kaan Kizilirmak/Desktop/chat/arkaplan.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        #chat {
+            height: 800px;
+            overflow-y: auto;
+        }
+
+        #contentWrap {
+            display: none;
+
+        }
+
+        #chatWrap {
+            float: left;
+            border: 5px #000 solid;
+            overflow-y: auto;
+
+        }
+
+        .onlinekullanici {
+            float: left;
+            height: 300px;
+            width: 150px;
+            margin: 2px 2px 2px 2px;
+            border: solid 5px #000;
+        }
+
+        .offlinekullanici {
+            float: left;
+            height: 300px;
+            width: 150px;
+            margin: 2px 2px 2px 2px;
+            border: solid 5px #000;
+        }
+
+        .error {
+
+            color: red;
+        }
+
+        .whisper {
+
+            color: #4c419c;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+
+
+    <div id="nickWrap">
+        <p>kullanici adini girin:</p>
+        <p id="nickError"></p>
+        <form id="setNick">
+            <input size="35" id="nickname"></input>
+            <input type="submit" id="nickname"></input>
+        </form>
+    </div>
+
+
+    <div id="contentWrap">
+        <div id="chatWrap">
+            <div id="chat"></div>
+            <form id="send-message">
+                <input size="35" id="message"></input>
+                <input type="submit"></input>
+            </form>
+        </div>
+
+        <div class="onlinekullanici">
+            <font style="color :#d21e1e"> ---ONLİNE--- </font>
+            <br/>
+
+            <div id="users"></div>
+        </div>
+        <div class="offlinekullanici">
+            <font style="color :#d21e1e">---OFFLİNE---
+                <div id="offlineusers"></div>
+            </font>
+        </div>
+
+
+        <button onclick="window.location.href='http://192.168.1.38:3000'">OTURUMU KAPAT</button>
+
+
+
+    </div>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    
+
+    <script>
+        jQuery(function ($) {
+            var socket = io.connect();
+
+            var $nickForm = $('#setNick');
+            var $nickError = $('#nickError');
+            var $nickBox = $('#nickname');
+            var $users = $('#users');
+            var $offlineusers = $('#offlineusers');
+
+            var $messageForm = $('#send-message');
+            var $messageBox = $('#message');
+            var $chat = $('#chat');
+
+
+            $nickForm.submit(function (e) {
+                e.preventDefault();
+                socket.emit('new user', $nickBox.val(), function (data) {
+                    if (data) {
+                        $('#nickWrap').hide();
+                        $('#contentWrap').show();
+                    } else {
+                        $nickError.html('Bu kullanici adi daha önceden alınmış! Tekrar deneyin  ');
+                    }
+                });
+                $nickBox.val('');
+            });
+
+
+
+
+            // online kullanıcılar
+            socket.on('usernames', function (data) {
+
+                var html = '';
+                for (i = 0; i < data.length; i++) {
+                    html += data[i] + '<br/>'
+                }
+                $users.html(html);
+
+
+                updateNicknames(users);
+            });
+
+           
+
+            $messageForm.submit(function (e) {
+                e.preventDefault();
+                socket.emit('send message', $messageBox.val(), function (data) {
+                    $chat.append('<span class="error">' + data + "</span><br/>");
+                });
+                $messageBox.val('');
+            });
+
+
+            socket.on('new message', function (data) {
+                $chat.append('<span class="msg"><b>' + data.nick + ' : </b>' + data.msg + "</span><br/>");
+
+            });
+
+            socket.on('whisper', function (data) {
+                // ! PERMİSSİON OLAYI !
+                var r = confirm(data.nick + " nickli kullanici ile mesajlaşmak ister misin?");
+                if (r == true) {
+                    $chat.append('<span class="whisper"><b>' + data.nick + ' : </b>' + data.msg + "</span><br/>");
+                } else {
+                    return;
+                }
+
+            });
+
+
+        });
+    </script>
+
+</body>
+
+</html>
